@@ -48,9 +48,12 @@ class ShockNotebookManager(NotebookManager):
         """
         self.mapping = {}
         self.shock_map = {}
-        query_url = '%s/node?query&type=ipynb&user=%s' %(self.shock_url, self.shock_user)
+        nb_vers = defaultdict(list)
+        
         query_res = getShock(query_url, 'json')
-        nb_vers   = defaultdict(list)
+        query_url = self.shock_url+'/node?query&type=ipynb'
+        if self.shock_user:
+            query_url += '&user='+self.shock_user
         
         if query_res is not None:
             for node in query_res:
@@ -112,7 +115,7 @@ class ShockNotebookManager(NotebookManager):
             if notebook_id is None:
                 notebook_id = self.new_notebook_id(new_name)
             nb.metadata.created = datetime.datetime.now().isoformat()
-            nb.metadata.user = self.shock_user
+            nb.metadata.user = self.shock_user if self.shock_user else 'public'
             nb.metadata.type = 'ipynb'
             nb.metadata.uuid = notebook_id
         except Exception as e:
