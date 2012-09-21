@@ -50,10 +50,10 @@ class ShockNotebookManager(NotebookManager):
         self.shock_map = {}
         nb_vers = defaultdict(list)
         
-        query_res = getShock(query_url, 'json')
         query_url = self.shock_url+'/node?query&type=ipynb'
         if self.shock_user:
             query_url += '&user='+self.shock_user
+        query_res = self.getShock(query_url, 'json')
         
         if query_res is not None:
             for node in query_res:
@@ -64,7 +64,7 @@ class ShockNotebookManager(NotebookManager):
         for uuid in nb_vers.iterkeys():
             nodes = sorted(nb_vers[uuid], key=lambda x: x['attributes']['created'], reverse=True)
             self.mapping[uuid] = nodes[0]['attributes']['name']
-            self.shock_map[uuid] = node[0]['id']
+            self.shock_map[uuid] = nodes[0]
 
     def list_notebooks(self):
         """List all notebooks in the container.
@@ -93,16 +93,17 @@ class ShockNotebookManager(NotebookManager):
         if not self.notebook_exists(notebook_id):
             raise web.HTTPError(404, u'Notebook does not exist: %s' %notebook_id)
         try:
-            node_url  = '%s/node/%s' %(self.shock_url, self.shock_map[notebook_id])
-            node_data = getShock(node_url, 'file')
+            node_url  = '%s/node/%s?download' %(self.shock_url, self.shock_map[notebook_id]['id'])
+            node_data = self.getShock(node_url, 'data')
         except:
-            raise web.HTTPError(500, u'Notebook cannot be read.')
+            raise web.HTTPError(500, u'Notebook cannot be read')
         try:
             # v1 and v2 and json in the .ipynb files.
             nb = current.reads(node_data, u'json')
-            last_modified = dateutil.parser.parse(nb.metadata.created)
         except:
-            raise web.HTTPError(500, u'Unreadable JSON notebook.')
+            raise web.HTTPError(500, u'Unreadable JSON notebook.\n%s' %node_data)
+        dt = self.shock_map[notebook_id]['attributes']['created']
+        last_modified = dateutil.parser.parse(dt) if dt else datetime.datetime.now().isoformat()
         return last_modified, nb
 
     def write_notebook_object(self, nb, notebook_id=None):
@@ -126,12 +127,12 @@ class ShockNotebookManager(NotebookManager):
         try:
             data = current.writes(nb, u'json')
             attr = json.dumps(nb.metadata)
-            shock_id = postShock(self.shock_url+'/node', new_name, data, attr)
+            shock_node = self.postShock(self.shock_url+'/node', new_name, data, attr)
         except Exception as e:
             raise web.HTTPError(400, u'Unexpected error while saving notebook: %s' %e)
 
         self.mapping[notebook_id] = new_name
-        self.shock_map[notebook_id] = shock_id
+        self.shock_map[notebook_id] = shock_node
         return notebook_id
 
     def delete_notebook(self, notebook_id):
@@ -141,7 +142,7 @@ class ShockNotebookManager(NotebookManager):
             raise web.HTTPError(404, u'Notebook does not exist: %s' %notebook_id)
         self.delete_notebook_id(notebook_id)
 
-    def getShock(url, format):
+    def getShock(self, url, format):
         content = None
         try:
             rget = requests.get(url)
@@ -159,20 +160,20 @@ class ShockNotebookManager(NotebookManager):
         else:
             return rget.text
 
-    def postShock(url, name, data, attr):
+    def postShock(self, url, name, data, attr):
         dataHdl = cStringIO.StringIO(data)
         attrHdl = cStringIO.StringIO(attr)
         files = { "file": ('%s.ipynb'%name, dataHdl), "attributes": ('%s_metadata.json'%name, attrHdl) }
         try:
             rpost = requests.post(url, files=files)
-            rj = rget.json
+            rj = rpost.json
         except Exception as e:
             raise web.HTTPError(400, u'Unable to connect to SHOCK server %s: %s' %(url, e))
         if not (rpost.ok and rj and isinstance(rj, dict) and all([key in rj for key in ['S','D','E']])):
             raise web.HTTPError(400, u'Unable to POST to SHOCK server %s: %s' %(url, rpost.raise_for_status()))
         if rj['E']:
             raise web.HTTPError(rj['S'], 'SHOCK error: '+rj['E'])
-        return rj['D']['id']
+        return rj['D']
 
     def log_info(self):
         self.log.info("Serving notebooks from SHOCK storage for user %s: %s" %(self.shock_user, self.shock_url))
