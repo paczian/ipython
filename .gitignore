@@ -12,3 +12,5 @@ build
 *~
 *.bak
 .tox
+._*
+.DS_Store
