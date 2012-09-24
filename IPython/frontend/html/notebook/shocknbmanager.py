@@ -113,10 +113,7 @@ class ShockNotebookManager(NotebookManager):
         except AttributeError:
             raise web.HTTPError(400, u'Missing notebook name')
         try:
-            # create a new uuid if does not have one or name is changed
             if notebook_id is None:
-                notebook_id = self.new_notebook_id(new_name)
-            if (notebook_id in self.shock_map) and (new_name != self.shock_map[notebook_id]['attributes']['name']):
                 notebook_id = self.new_notebook_id(new_name)
             nb.metadata.created = datetime.datetime.now().isoformat()
             nb.metadata.user = self.shock_user if self.shock_user else 'public'
