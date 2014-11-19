@@ -4,58 +4,121 @@
 <head>
     <meta charset="utf-8">
 
-    <title>{% block title %}IPython Notebook{% end %}</title>
-
-    <link rel="stylesheet" href="{{static_url("jquery/css/themes/base/jquery-ui.min.css") }}" type="text/css" />
-    <link rel="stylesheet" href="{{static_url("css/boilerplate.css") }}" type="text/css" />
-    <link rel="stylesheet" href="{{static_url("css/fbm.css") }}" type="text/css" />
-    <link rel="stylesheet" href="{{static_url("css/page.css") }}" type="text/css"/>
+    <title>{% block title %}IPython Notebook{% endblock %}</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{{static_url("base/images/favicon.ico") }}">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" href="{{static_url("components/jquery-ui/themes/smoothness/jquery-ui.min.css") }}" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     {% block stylesheet %}
-    {% end %}
-    <link rel="stylesheet" href="{{ static_url("css/custom.css") }}" type="text/css" />
-
+    <link rel="stylesheet" href="{{ static_url("style/style.min.css") }}" type="text/css"/>
+    {% endblock %}
+    <link rel="stylesheet" href="{{ static_url("custom/custom.css") }}" type="text/css" />
+    <script src="{{static_url("components/requirejs/require.js") }}" type="text/javascript" charset="utf-8"></script>
+    <script>
+      require.config({
+          baseUrl: '{{static_url("", include_version=False)}}',
+          paths: {
+            nbextensions : '{{ base_url }}nbextensions',
+            underscore : 'components/underscore/underscore-min',
+            backbone : 'components/backbone/backbone-min',
+            jquery: 'components/jquery/jquery.min',
+            bootstrap: 'components/bootstrap/js/bootstrap.min',
+            bootstraptour: 'components/bootstrap-tour/build/js/bootstrap-tour.min',
+            jqueryui: 'components/jquery-ui/ui/minified/jquery-ui.min',
+            highlight: 'components/highlight.js/build/highlight.pack',
+            moment: "components/moment/moment",
+            codemirror: 'components/codemirror',
+            termjs: "components/term.js/src/term",
+            contents: '{{ contents_js_source }}',
+          },
+          shim: {
+            underscore: {
+              exports: '_'
+            },
+            backbone: {
+              deps: ["underscore", "jquery"],
+              exports: "Backbone"
+            },
+            bootstrap: {
+              deps: ["jquery"],
+              exports: "bootstrap"
+            },
+            bootstraptour: {
+              deps: ["bootstrap"],
+              exports: "Tour"
+            },
+            jqueryui: {
+              deps: ["jquery"],
+              exports: "$"
+            },
+            highlight: {
+              exports: "hljs"
+            },
+          }
+      });
+    </script>
 
     {% block meta %}
-    {% end %}
+    {% endblock %}
 
 </head>
 
-<body {% block params %}{% end %}>
+<body {% block params %}{% endblock %}>
 
-<div id="header">
-    <span id="ipython_notebook" style="background-color:black;"><h1><a href={{base_project_url}} alt='dashboard'><img src='{{static_url("MGRAST_logo_slim.png") }}' alt='IPython Notebook'/></a></h1></span>
+<noscript>
+    <div id='noscript'>
+      IPython Notebook requires JavaScript.<br>
+      Please enable it to proceed.
+  </div>
+</noscript>
 
-    {% block login_widget %}
+<div class="navbar navbar-kbase">
+      <a class="pull-left" href="http://www.kbase.us">
+        <img id="logo" width="46" src="{{ static_url("kbase_logo.png") }}">
+      </a>
+      <div class="nav-inner">
+        <ul class="nav">
+          <li class="active">
+            <a href="#">Narratives</a>
+          </li>
+          <li>
+            <a href="#">Workspaces</a>
+          </li>
+          <li>
+            <a href="#">Search Data</a>
+          </li>
+          <li>
+            <a href="#">Upload</a>
+          </li>
+        </ul>
 
-      <span id="login_widget">
-        {% if logged_in %}
-          <button id="logout">Logout</button>
-        {% elif login_available and not logged_in %}
-          <button id="login">Login</button>
-        {% end %}
-      </span>
+        <ul class="nav pull-right">
+          <li class="dropdown help-dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+              Help
+              <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu">
+              <li>
+                <a target="_new" href="http://kbase.us/for-users/narrative-quick-start/">Narrative Quick Start Guide</a>
+              </li>
+              <li>
+                <a href="mailto:help@kbase.us">Email help@kbase.us</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
 
-    {% end %}
-
-    {% block header %}
-    {% end %}
-</div>
-
+      </div>
+    </div>
 <div id="site">
 {% block site %}
-{% end %}
+{% endblock %}
 </div>
 
-<script src="{{static_url("jquery/js/jquery-1.7.1.min.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{static_url("jquery/js/jquery-ui.min.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{static_url("js/namespace.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{static_url("js/page.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{static_url("js/loginwidget.js") }}" type="text/javascript" charset="utf-8"></script>
-
 {% block script %}
-{% end %}
-
-<script src="{{static_url("js/custom.js") }}" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
 
 </body>
 

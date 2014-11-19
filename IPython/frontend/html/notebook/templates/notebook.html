@@ -1,256 +1,333 @@
-{% extends page.html %}
+{% extends "page.html" %}
+
 {% block stylesheet %}
 
 {% if mathjax_url %}
-<script type="text/javascript" src="{{mathjax_url}}?config=TeX-AMS_HTML" charset="utf-8"></script>
-{% end %}
+<script type="text/javascript" src="{{mathjax_url}}?config=TeX-AMS_HTML-full&delayStartupUntil=configured" charset="utf-8"></script>
+{% endif %}
 <script type="text/javascript">
 // MathJax disabled, set as null to distingish from *missing* MathJax,
 // where it will be undefined, and should prompt a dialog later.
 window.mathjax_url = "{{mathjax_url}}";
 </script>
 
-<link rel="stylesheet" href="{{ static_url("codemirror/lib/codemirror.css") }}">
-<link rel="stylesheet" href="{{ static_url("codemirror/theme/ipython.css") }}">
+<link rel="stylesheet" href="{{ static_url("components/bootstrap-tour/build/css/bootstrap-tour.min.css") }}" type="text/css" />
+<link rel="stylesheet" href="{{ static_url("components/codemirror/lib/codemirror.css") }}">
+<link rel="stylesheet" href="{{ static_url("components/kbase/kbase.css") }}" type="text/css" />
 
-<link rel="stylesheet" href="{{ static_url("prettify/prettify.css") }}"/>
+{{super()}}
 
-<link rel="stylesheet" href="{{ static_url("css/notebook.css") }}" type="text/css" />
-<link rel="stylesheet" href="{{ static_url("css/tooltip.css") }}" type="text/css" />
-<link rel="stylesheet" href="{{ static_url("css/renderedhtml.css") }}" type="text/css" />
+<link rel="stylesheet" href="{{ static_url("notebook/css/override.css") }}" type="text/css" />
 
-<link rel="stylesheet" href="{{ static_url("css/printnotebook.css") }}" type="text/css" media="print"/>
-
-{% end %}
-
+{% endblock %}
 
 {% block params %}
 
-data-project={{project}}
-data-base-project-url={{base_project_url}}
-data-base-kernel-url={{base_kernel_url}}
-data-read-only={{read_only and not logged_in}}
-data-notebook-id={{notebook_id}}
+data-project="{{project}}"
+data-base-url="{{base_url}}"
+data-ws-url="{{ws_url}}"
+data-notebook-name="{{notebook_name}}"
+data-notebook-path="{{notebook_path}}"
+class="notebook_app"
 
-{% end %}
+{% endblock %}
 
 
 {% block header %}
 
-<span id="save_widget">
+<!--
+<span id="save_widget" class="nav pull-left">
     <span id="notebook_name"></span>
-    <span id="save_status"></span>
+    <span id="checkpoint_status"></span>
+    <span id="autosave_status"></span>
 </span>
 
-{% end %}
+<span id="kernel_selector_widget" class="pull-right dropdown">
+    <button class="dropdown-toggle" data-toggle="dropdown" type='button' id="current_kernel_spec">
+        <span class='kernel_name'>Python</span>
+        <span class="caret"></span> 
+    </button>
+    <ul id="kernel_selector" class="dropdown-menu">
+    </ul>
+</span>
+-->
+
+{% endblock %}
 
 
 {% block site %}
 
-<div id="menubar_container">
-<div id="menubar">
-    <ul id="menus">
-        <li><a href="#">File</a>
-            <ul>
-                <li id="new_notebook"><a href="#">New</a></li>
-                <li id="open_notebook"><a href="#">Open...</a></li>
-                <hr/>
-                <li id="copy_notebook"><a href="#">Make a Copy...</a></li>
-                <li id="rename_notebook"><a href="#">Rename...</a></li>
-                <li id="save_notebook"><a href="#">Save</a></li>
-                <hr/>
-                <li><a href="#">Download as</a>
-                    <ul>
-                        <li id="download_ipynb"><a href="#">IPython (.ipynb)</a></li>
-                        <li id="download_py"><a href="#">Python (.py)</a></li>
+<div id="left-column"></div>
+<div  id="content-column">
+<div id="menubar-container" class="">
+<div id="menubar" style="display: none;">
+    <div id="menus" class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+            <button type="button" class="btn btn-default navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <i class="fa fa-bars"></i>
+              <span class="navbar-text">Menu</span>
+            </button>
+            <ul class="nav navbar-nav navbar-right">
+              <li id="kernel_indicator">
+                <i id="kernel_indicator_icon"></i>
+              </li>
+              <li id="modal_indicator">
+                <i id="modal_indicator_icon"></i>
+              </li>
+              <li id="notification_area"></li>
+            </ul>
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">File</a>
+                    <ul id="file_menu" class="dropdown-menu">
+                        <li id="new_notebook"
+                            title="Make a new notebook (Opens a new window)">
+                            <a href="#">New</a></li>
+                        <li id="open_notebook"
+                            title="Opens a new window with the Dashboard view">
+                            <a href="#">Open...</a></li>
+                        <!-- <hr/> -->
+                        <li class="divider"></li>
+                        <li id="copy_notebook"
+                            title="Open a copy of this notebook's contents and start a new kernel">
+                            <a href="#">Make a Copy...</a></li>
+                        <li id="rename_notebook"><a href="#">Rename...</a></li>
+                        <li id="save_checkpoint"><a href="#">Save and Checkpoint</a></li>
+                        <!-- <hr/> -->
+                        <li class="divider"></li>
+                        <li id="restore_checkpoint" class="dropdown-submenu"><a href="#">Revert to Checkpoint</a>
+                          <ul class="dropdown-menu">
+                            <li><a href="#"></a></li>
+                            <li><a href="#"></a></li>
+                            <li><a href="#"></a></li>
+                            <li><a href="#"></a></li>
+                            <li><a href="#"></a></li>
+                          </ul>
+                        </li>
+                        <li class="divider"></li>
+                        <li id="print_preview"><a href="#">Print Preview</a></li>
+                        <li class="dropdown-submenu"><a href="#">Download as</a>
+                            <ul class="dropdown-menu">
+                                <li id="download_ipynb"><a href="#">IPython Notebook (.ipynb)</a></li>
+                                <li id="download_py"><a href="#">Python (.py)</a></li>
+                                <li id="download_html"><a href="#">HTML (.html)</a></li>
+                                <li id="download_rst"><a href="#">reST (.rst)</a></li>
+                                <li id="download_pdf"><a href="#">PDF (.pdf)</a></li>
+                            </ul>
+                        </li>
+                        <li class="divider"></li>
+                        <li id="trust_notebook"
+                            title="Trust the output of this notebook">
+                            <a href="#" >Trust Notebook</a></li>
+                        <li class="divider"></li>
+                        <li id="kill_and_exit"
+                            title="Shutdown this notebook's kernel, and close this window">
+                            <a href="#" >Close and halt</a></li>
                     </ul>
                 </li>
-                <hr/>
-                <li id="print_notebook"><a href="/{{notebook_id}}/print" target="_blank">Print View</a></li>
-                <hr/>
-                <li id="kill_and_exit"><a href="#" >Close and halt</a></li>
-            </ul>
-        </li>
-        <li><a href="#">Edit</a>
-            <ul>
-                <li id="cut_cell"><a href="#">Cut Cell</a></li>
-                <li id="copy_cell"><a href="#">Copy Cell</a></li>
-                <li id="paste_cell" class="ui-state-disabled"><a href="#">Paste Cell</a></li>
-                <li id="paste_cell_above" class="ui-state-disabled"><a href="#">Paste Cell Above</a></li>
-                <li id="paste_cell_below" class="ui-state-disabled"><a href="#">Paste Cell Below</a></li>
-                <li id="delete_cell"><a href="#">Delete</a></li>
-                <hr/>
-                <li id="split_cell"><a href="#">Split Cell</a></li>
-                <li id="merge_cell_above"><a href="#">Merge Cell Above</a></li>
-                <li id="merge_cell_below"><a href="#">Merge Cell Below</a></li>
-                <hr/>
-                <li id="move_cell_up"><a href="#">Move Cell Up</a></li>
-                <li id="move_cell_down"><a href="#">Move Cell Down</a></li>
-                <hr/>
-                <li id="select_previous"><a href="#">Select Previous Cell</a></li>
-                <li id="select_next"><a href="#">Select Next Cell</a></li>
-            </ul>
-        </li>
-        <li><a href="#">View</a>
-            <ul>
-                <li id="toggle_header"><a href="#">Toggle Header</a></li>
-                <li id="toggle_toolbar"><a href="#">Toggle Toolbar</a></li>
-            </ul>
-        </li>
-        <li><a href="#">Insert</a>
-            <ul>
-                <li id="insert_cell_above"><a href="#">Insert Cell Above</a></li>
-                <li id="insert_cell_below"><a href="#">Insert Cell Below</a></li>
-            </ul>
-        </li>
-        <li><a href="#">Cell</a>
-            <ul>
-                <li id="run_cell"><a href="#">Run</a></li>
-                <li id="run_cell_in_place"><a href="#">Run in Place</a></li>
-                <li id="run_all_cells"><a href="#">Run All</a></li>
-                <hr/>
-                <li id="to_code"><a href="#">Code</a></li>
-                <li id="to_markdown"><a href="#">Markdown </a></li>
-                <li id="to_raw"><a href="#">Raw Text</a></li>
-                <li id="to_heading1"><a href="#">Heading 1</a></li>
-                <li id="to_heading2"><a href="#">Heading 2</a></li>
-                <li id="to_heading3"><a href="#">Heading 3</a></li>
-                <li id="to_heading4"><a href="#">Heading 4</a></li>
-                <li id="to_heading5"><a href="#">Heading 5</a></li>
-                <li id="to_heading6"><a href="#">Heading 6</a></li>
-                <hr/>
-                <li id="toggle_output"><a href="#">Toggle Current Output</a></li>
-                <li id="all_outputs"><a href="#">All Output</a>
-                    <ul>
-                        <li id="expand_all_output"><a href="#">Expand</a></li>
-                        <li id="scroll_all_output"><a href="#">Scroll Long</a></li>
-                        <li id="collapse_all_output"><a href="#">Collapse</a></li>
-                        <li id="clear_all_output"><a href="#">Clear</a></li>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Edit</a>
+                    <ul id="edit_menu" class="dropdown-menu">
+                        <li id="cut_cell"><a href="#">Cut Cell</a></li>
+                        <li id="copy_cell"><a href="#">Copy Cell</a></li>
+                        <li id="paste_cell_above" class="disabled"><a href="#">Paste Cell Above</a></li>
+                        <li id="paste_cell_below" class="disabled"><a href="#">Paste Cell Below</a></li>
+                        <li id="paste_cell_replace" class="disabled"><a href="#">Paste Cell &amp; Replace</a></li>
+                        <li id="delete_cell"><a href="#">Delete Cell</a></li>
+                        <li id="undelete_cell" class="disabled"><a href="#">Undo Delete Cell</a></li>
+                        <li class="divider"></li>
+                        <li id="split_cell"><a href="#">Split Cell</a></li>
+                        <li id="merge_cell_above"><a href="#">Merge Cell Above</a></li>
+                        <li id="merge_cell_below"><a href="#">Merge Cell Below</a></li>
+                        <li class="divider"></li>
+                        <li id="move_cell_up"><a href="#">Move Cell Up</a></li>
+                        <li id="move_cell_down"><a href="#">Move Cell Down</a></li>
+                        <li class="divider"></li>
+                        <li id="edit_nb_metadata"><a href="#">Edit Notebook Metadata</a></li>
                     </ul>
                 </li>
-            </ul>
-        </li>
-        <li><a href="#">Kernel</a>
-            <ul>
-                <li id="int_kernel"><a href="#">Interrupt</a></li>
-                <li id="restart_kernel"><a href="#">Restart</a></li>
-            </ul>
-        </li>
-        <li><a href="#">Help</a>
-            <ul>
-                <li><a href="http://ipython.org/documentation.html" target="_blank">IPython Help</a></li>
-                <li><a href="http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html" target="_blank">Notebook Help</a></li>
-                <li id="keyboard_shortcuts"><a href="#">Keyboard Shortcuts</a></li>
-                <hr/>
-                <li><a href="http://docs.python.org" target="_blank">Python</a></li>
-                <li><a href="http://docs.scipy.org/doc/numpy/reference/" target="_blank">NumPy</a></li>
-                <li><a href="http://docs.scipy.org/doc/scipy/reference/" target="_blank">SciPy</a></li>
-                <li><a href="http://docs.sympy.org/dev/index.html" target="_blank">SymPy</a></li>
-                <li><a href="http://matplotlib.sourceforge.net/" target="_blank">Matplotlib</a></li>
-            </ul>
-        </li>
-    </ul>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">View</a>
+                    <ul id="view_menu" class="dropdown-menu">
+                        <li id="toggle_header"
+                            title="Show/Hide the IPython Notebook logo and notebook title (above menu bar)">
+                            <a href="#">Toggle Header</a></li>
+                        <li id="toggle_toolbar"
+                            title="Show/Hide the action icons (below menu bar)">
+                            <a href="#">Toggle Toolbar</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Insert</a>
+                    <ul id="insert_menu" class="dropdown-menu">
+                        <li id="insert_cell_above"
+                            title="Insert an empty Code cell above the currently active cell">
+                            <a href="#">Insert Cell Above</a></li>
+                        <li id="insert_cell_below"
+                            title="Insert an empty Code cell below the currently active cell">
+                            <a href="#">Insert Cell Below</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Cell</a>
+                    <ul id="cell_menu" class="dropdown-menu">
+                        <li id="run_cell" title="Run this cell, and move cursor to the next one">
+                            <a href="#">Run</a></li>
+                        <li id="run_cell_select_below" title="Run this cell, select below">
+                            <a href="#">Run and Select Below</a></li>
+                        <li id="run_cell_insert_below" title="Run this cell, insert below">
+                            <a href="#">Run and Insert Below</a></li>
+                        <li id="run_all_cells" title="Run all cells in the notebook">
+                            <a href="#">Run All</a></li>
+                        <li id="run_all_cells_above" title="Run all cells above (but not including) this cell">
+                            <a href="#">Run All Above</a></li>
+                        <li id="run_all_cells_below" title="Run this cell and all cells below it">
+                            <a href="#">Run All Below</a></li>
+                        <li class="divider"></li>
+                        <li id="change_cell_type" class="dropdown-submenu"
+                            title="All cells in the notebook have a cell type. By default, new cells are created as 'Code' cells">
+                            <a href="#">Cell Type</a>
+                            <ul class="dropdown-menu">
+                              <li id="to_code"
+                                  title="Contents will be sent to the kernel for execution, and output will display in the footer of cell">
+                                  <a href="#">Code</a></li>
+                              <li id="to_markdown"
+                                  title="Contents will be rendered as HTML and serve as explanatory text">
+                                  <a href="#">Markdown</a></li>
+                              <li id="to_raw"
+                                  title="Contents will pass through nbconvert unmodified">
+                                  <a href="#">Raw NBConvert</a></li>
+                            </ul>
+                        </li>
+                        <li class="divider"></li>
+                        <li id="current_outputs" class="dropdown-submenu"><a href="#">Current Output</a>
+                            <ul class="dropdown-menu">
+                                <li id="toggle_current_output"
+                                    title="Hide/Show the output of the current cell">
+                                    <a href="#">Toggle</a>
+                                </li>
+                                <li id="toggle_current_output_scroll"
+                                    title="Scroll the output of the current cell">
+                                    <a href="#">Toggle Scrolling</a>
+                                </li>
+                                <li id="clear_current_output"
+                                    title="Clear the output of the current cell">
+                                    <a href="#">Clear</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li id="all_outputs" class="dropdown-submenu"><a href="#">All Output</a>
+                            <ul class="dropdown-menu">
+                                <li id="toggle_all_output"
+                                    title="Hide/Show the output of all cells">
+                                    <a href="#">Toggle</a>
+                                </li>
+                                <li id="toggle_all_output_scroll"
+                                    title="Scroll the output of all cells">
+                                    <a href="#">Toggle Scrolling</a>
+                                </li>
+                                <li id="clear_all_output"
+                                    title="Clear the output of all cells">
+                                    <a href="#">Clear</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Kernel</a>
+                    <ul id="kernel_menu" class="dropdown-menu">
+                        <li id="int_kernel"
+                            title="Send KeyboardInterrupt (CTRL-C) to the Kernel">
+                            <a href="#">Interrupt</a>
+                        </li>
+                        <li id="restart_kernel"
+                            title="Restart the Kernel">
+                            <a href="#">Restart</a>
+                        </li>
+                        <li id="reconnect_kernel"
+                            title="Reconnect to the Kernel">
+                            <a href="#">Reconnect</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li id="menu-change-kernel" class="dropdown-submenu">
+                            <a href="#">Change kernel</a>
+                            <ul class="dropdown-menu" id="menu-change-kernel-submenu"></ul>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Help</a>
+                    <ul  id="help_menu" class="dropdown-menu">
+                        <li id="notebook_tour" title="A quick tour of the notebook user interface"><a href="#">User Interface Tour</a></li>
+                        <li id="keyboard_shortcuts" title="Opens a tooltip with all keyboard shortcuts"><a href="#">Keyboard Shortcuts</a></li>
+                        <li class="divider"></li>
+                        {% set
+                            sections = (
+                                (
+                                    ("http://ipython.org/documentation.html","IPython Help",True),
+                                    ("http://nbviewer.ipython.org/github/ipython/ipython/tree/2.x/examples/Index.ipynb", "Notebook Help", True),
+                                ),(
+                                    ("http://docs.python.org","Python",True),
+                                    ("http://help.github.com/articles/github-flavored-markdown","Markdown",True),
+                                    ("http://docs.scipy.org/doc/numpy/reference/","NumPy",True),
+                                    ("http://docs.scipy.org/doc/scipy/reference/","SciPy",True),
+                                    ("http://matplotlib.org/contents.html","Matplotlib",True),
+                                    ("http://docs.sympy.org/latest/index.html","SymPy",True),
+                                    ("http://pandas.pydata.org/pandas-docs/stable/","pandas", True)
+                                )
+                            )
+                        %}
 
-</div>
-    <div id="notification_area">
+                        {% for helplinks in sections %}
+                            {% for link in helplinks %}
+                                <li><a href="{{link[0]}}" {{'target="_blank" title="Opens in a new window"' if link[2]}}>
+                                {{'<i class="fa fa-external-link menu-icon pull-right"></i>' if link[2]}}
+                                {{link[1]}}
+                                </a></li>
+                            {% endfor %}
+                            {% if not loop.last %}
+                                <li class="divider"></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="divider"></li>
+                        <li title="About IPython Notebook"><a id="notebook_about" href="#">About</a></li>
+                    </ul>
+                </li>
+              </ul>
+            </div>
+        </div>
     </div>
 </div>
-
-
-<div id="toolbar">
-
-    <span>
-        <button id="save_b">Save</button>
-    </span>
-    <span id="cut_copy_paste">
-        <button id="cut_b" title="Cut Cell">Cut Cell</button>
-        <button id="copy_b" title="Copy Cell">Copy Cell</button>
-        <button id="paste_b" title="Paste Cell">Paste Cell</button>
-    </span>
-    <span id="move_up_down">
-        <button id="move_up_b" title="Move Cell Up">Move Cell Up</button>
-        <button id="move_down_b" title="Move Cell Down">Move Down</button>
-    </span>
-    <span id="insert_above_below">
-        <button id="insert_above_b" title="Insert Cell Above">Insert Cell Above</button>
-        <button id="insert_below_b" title="Insert Cell Below">Insert Cell Below</button>
-    </span>
-    <span id="run_int">
-        <button id="run_b" title="Run Cell">Run Cell</button>
-        <button id="interrupt_b" title="Interrupt">Interrupt</button>
-    </span>
-    <span>
-        <select id="cell_type">
-             <option value="code">Code</option>
-             <option value="markdown">Markdown</option>
-             <option value="raw">Raw Text</option>
-             <option value="heading1">Heading 1</option>
-             <option value="heading2">Heading 2</option>
-             <option value="heading3">Heading 3</option>
-             <option value="heading4">Heading 4</option>
-             <option value="heading5">Heading 5</option>
-             <option value="heading6">Heading 6</option>
-        </select>
-    </span>
-
+<div id="maintoolbar" class="navbar">
+  <div class="toolbar-inner navbar-inner navbar-nobg">
+    <div id="maintoolbar-container" class="container"></div>
+  </div>
+</div>
 </div>
 
-<div id="main_app">
+<div id="ipython-main-app">
 
     <div id="notebook_panel">
         <div id="notebook"></div>
         <div id="pager_splitter"></div>
-        <div id="pager_container">
+        <div id="pager">
             <div id='pager_button_area'>
             </div>
-            <div id="pager"></div>
+            <div id="pager-container" class="container"></div>
         </div>
     </div>
 
 </div>
-<div id='tooltip' class='tooltip ui-corner-all' style='display:none'></div>
+</div>
+<div id='tooltip' class='ipython_tooltip' style='display:none'></div>
 
 
-{% end %}
+{% endblock %}
 
 
 {% block script %}
+{{super()}}
+<script type="text/javascript">
+    sys_info = {{sys_info}};
+</script>
 
-<script src="{{ static_url("codemirror/lib/codemirror.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/python/python.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/htmlmixed/htmlmixed.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/xml/xml.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/javascript/javascript.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/css/css.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/rst/rst.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("codemirror/mode/markdown/markdown.js") }}" charset="utf-8"></script>
+<script src="{{ static_url("components/text-encoding/lib/encoding.js") }}" charset="utf-8"></script>
 
-<script src="{{ static_url("pagedown/Markdown.Converter.js") }}" charset="utf-8"></script>
+<script src="{{ static_url("notebook/js/main.js") }}" charset="utf-8"></script>
 
-<script src="{{ static_url("prettify/prettify.js") }}" charset="utf-8"></script>
-<script src="{{ static_url("dateformat/date.format.js") }}" charset="utf-8"></script>
-
-<script src="{{ static_url("js/events.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/utils.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/layoutmanager.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/initmathjax.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/outputarea.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/cell.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/codecell.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/completer.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/textcell.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/kernel.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/savewidget.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/quickhelp.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/pager.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/menubar.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/toolbar.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/notebook.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/notificationwidget.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/notificationarea.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/tooltip.js") }}" type="text/javascript" charset="utf-8"></script>
-<script src="{{ static_url("js/notebookmain.js") }}" type="text/javascript" charset="utf-8"></script>
-
-<script src="{{ static_url("js/contexthint.js") }}" charset="utf-8"></script>
-
-{% end %}
+{% endblock %}
